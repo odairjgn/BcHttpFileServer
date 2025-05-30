@@ -4,33 +4,28 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace BcHttpFileServer.Controllers
 {
-    [Route("root")]
-    public class RootController : ControllerBase
+    [Route("files")]
+    public class FileController : ControllerBase
     {
         const string RootFolder = @"E:\Users\odair\Videos";
         private readonly IHttpContextAccessor _httpContextAccessor;
 
-        public RootController(IHttpContextAccessor httpContextAccessor)
+        public FileController(IHttpContextAccessor httpContextAccessor)
         {
             _httpContextAccessor = httpContextAccessor;
         }
 
         [HttpGet]
-        public IActionResult Get()
+        public IActionResult Get(Args args)
         {
-            var dir = DirectoryDTO.Create(new DirectoryInfo(RootFolder), RootFolder);
-            return Ok(dir);
-        }
+            if (string.IsNullOrEmpty(args.Path))
+            {
+                var dir = DirectoryDTO.Create(new DirectoryInfo(RootFolder), RootFolder);
+                return Ok(dir);
+            }
 
-        [HttpGet("{*parametros}")]
-        public IActionResult Get(string parametros)
-        {
-            var frags = parametros.Split('?');
-            var path = Path.Combine(RootFolder, parametros.Split('?').First());
-            var args = frags.Count() > 1 ? frags.LastOrDefault() : _httpContextAccessor.HttpContext.Request.QueryString.Value;
-
-            args ??= string.Empty;
-
+            var path = Path.Combine(RootFolder, args.Path);
+            
             if (Directory.Exists(path))
             {
                 var dir = DirectoryDTO.Create(new DirectoryInfo(path), RootFolder);
@@ -39,15 +34,13 @@ namespace BcHttpFileServer.Controllers
 
             if (System.IO.File.Exists(path))
             {
-                var isInfo = args.Contains("info=true");
-
-                if (isInfo)
+                if (args.Info == true)
                 {
                     var wr = new MediaInfoWrapper(path);
                     return Ok(wr);
                 }
 
-                var isDl = args.Contains("download=true");
+                var isDl = args.Download == true;
                 var fileInfo = new FileInfo(path);
                 var stream = fileInfo.OpenRead();
                 var f = FileDTO.Create(fileInfo, RootFolder);
