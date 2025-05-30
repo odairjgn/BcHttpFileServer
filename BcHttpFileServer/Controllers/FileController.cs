@@ -37,6 +37,7 @@ namespace BcHttpFileServer.Controllers
                 if (args.Info == true)
                 {
                     var wr = new MediaInfoWrapper(path);
+                    
                     return Ok(wr);
                 }
 
